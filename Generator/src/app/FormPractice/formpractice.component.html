@@ -1,0 +1,68 @@
+<div class="container">
+  <div class="row">
+    <div >
+      <!--
+          Create a Form with the following Controls and Validators
+          1) Project Name (should not be empty)
+          2) Mail (should not be a empty and a valid email)
+          3) Project Status Dropdown, with three values: 'Stable', 'Critical', 'Finished'
+          4) Submit Button
+
+          Add your own Validator which doesn't allow "Test" as a Project Name
+
+          Also implement that Validator as an async Validator (replace the other one)
+
+          Upon submitting the form, simply print the value to the console
+      -->
+      <form [formGroup]="projectForm" (ngSubmit)="onSubmit()">
+            <div  class="form-group">
+              <label for="projectName">Project Name</label>
+              <input
+                type="text"
+                id="projectName"
+                formControlName="projectName"
+                class="form-control"
+              >
+            </div>
+            <div  class="form-group">
+              <label for="email">Email</label>
+              <input
+                type="email"
+                id="email"
+                formControlName="email"
+                class="form-control"
+              >
+            </div>
+            <div  class="form-group">
+              <label for="projectStatus">Project Status</label>
+              <select
+                id="projectStatus"
+                formControlName="projectStatus"
+                class="form-control"
+              >
+                <option *ngFor="let opt of projectStatuses;i as index" (value)="i">{{opt}}</option>
+              </select>
+            </div>
+            <div class="form-group" formArrayName="hobbies">
+              <h4>Hobbies</h4>
+              <button class="btn btn-default" type="button" name="addhobby" (click)="onAddHobby()">Add Hobby</button>
+              <div class="form-group"
+                   *ngFor="let hobby of projectForm.get('hobbies').controls; let i = index">
+                <input
+                  type="text"
+                  class="form-control"
+                  [formControlName]="i"
+                  >
+              </div>
+            </div>
+            <div  class="form-group">
+              <button
+                class="btn btn-primary"
+                type="submit"
+                [disabled]="!projectForm.valid"
+              >Submit</button>
+            </div>
+      </form>
+    </div>
+  </div>
+</div>
