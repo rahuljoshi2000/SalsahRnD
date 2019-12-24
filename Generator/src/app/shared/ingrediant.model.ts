@@ -19,7 +19,7 @@ export class EntityProperty {
   constructor(
     public entity_property_ID:string='',
     public entity_property_Name:string='',
-    public entity_property_Dispaly_Type:string='', // Text, TextArea, DatePicker, Dropdown, Search --> should have one associated control for it?
+    public entity_property_Dispaly_Type:string='', // Text, TextArea, DatePicker, Radio, Checkbox, Dropdown, Search --> should have one associated control for it?
     public entity_property_Data_Type:string='', // numeric, string, datetime, BISON, JSON
     public entity_property_Group:string='', // entity
     public entity_property_validation_rule: BusinessPolicyRule=null, // used for input validation
@@ -36,6 +36,7 @@ export class Parameter{
   ){}
 }
 export class BusinessPolicyRule{
+  public dataEntity:any;
   constructor(
     public businessRule_Name:string,
     public businessRule_function_Name:string,
