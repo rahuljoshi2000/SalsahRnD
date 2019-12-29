@@ -1,5 +1,6 @@
-import {Ingrediant, Salary, BusinessPolicyRule, Parameter} from "../shared/ingrediant.model";
 import {Subject} from "rxjs";
+
+import {Ingrediant} from "../shared/ingrediant.model";
 
 export class ShoppingListService{
   private ingrediants : Ingrediant[] = [
@@ -7,42 +8,11 @@ export class ShoppingListService{
     new Ingrediant('Tomatoes',10)
   ];
 
-  private salaries : Salary[] = [
-    new Salary(30000),
-    new Salary(40000)
-  ];
 
   constructor(){
-    let businessRule01 =
-      {
-        businessRule_Name:'calculateGrossSalary',
-        businessRule_function_Name: 'add',
-        paramArray:[
-          //new Parameter('basicSalary','attribute'),new Parameter('DA','attribute')
-          {parameter_Name:'basicSalary',parameter_Type:'attribute', businessRule:null,parameter_Value:''},
-          {parameter_Name:'DA',parameter_Type:'attribute', businessRule:null,parameter_Value:''},
-          {parameter_Name:'grossSalary',parameter_Type:'write', businessRule:null,parameter_Value:''}
-        ],
-        returnValue:null,
-      };
-    let businessRule02 =
-      {
-        businessRule_Name:'calculateAllowanceFixed',
-        businessRule_function_Name: 'multiply',
-        paramArray:[
-          //new Parameter('calculateGrossSalary', 'businessrule', businessRule01),
-          {parameter_Name:'calculateGrossSalary',parameter_Type:'businessrule', businessRule:businessRule01,parameter_Value:null},
-          new Parameter('multiplier', 'value', null, 0.3),
-          new Parameter('allowanceFixed', 'write')
-        ],
-        returnValue:null,
-      };
-    BusinessPolicyRule.execRule([{basicSalary:40000,allowanceFixed:0, DA:200,grossSalary:0}],businessRule02);
   }
 
   getIngrediants(){
-    //this.salaries[0].calculateAllowanceFixed();
-    //new Parameter('grossSalary','attribute')
     return this.ingrediants.slice();
   }
 
