@@ -19,15 +19,18 @@ export class ShoppingListService{
     let thisSessionObject:any;
     //let businessRule02:BusinessRule = this.entityService.getBusinessRule('calculateAllowanceFixed');
     this.entityService.setSampleBusinessRule();
-    let entity:Entity = this.entityService.getEntity('Salary'); //new Entity('','Salary','basic');
-    thisObject = this.entityService.generateEntityData(entity);
+
+    let entityEmployee:Entity = this.entityService.getEntity('Employee'); //new Entity('','Salary','basic');
+    thisObject = this.entityService.generateEntityData(entityEmployee);
     console.log(thisObject);
 
     let entitySession:Entity = this.entityService.getEntity('Session'); //new Entity('','Salary','basic');
     thisSessionObject = this.entityService.generateSessionData(entitySession);
+    this.entityService.sessionData = thisSessionObject;
+    this.entityService.sessionEntity = entitySession;
     console.log(thisSessionObject);
     //{basicSalary:40000,allowanceFixed:0, DA:200,grossSalary:0}
-    this.entityService.extractRule([thisObject], entity);
+    this.entityService.extractRule([thisObject], entityEmployee);
     console.log(thisObject);
   }
 

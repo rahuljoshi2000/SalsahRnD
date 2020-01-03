@@ -8,6 +8,8 @@ export class EntityService{
   private businessPolicy: BusinessPolicy;
   private entityArray: Entity[]=[];
   private eventEmitterArray:  Subject<any>[]=[];
+  public sessionData:any;
+  public sessionEntity:Entity;
 
   constructor(){
     this.businessPolicy = new BusinessPolicy();
@@ -26,9 +28,9 @@ export class EntityService{
 
     entity2 = new Entity('','Salary','basic');
 
-    this.addEntityProperty(entity1,new EntityProperty('','basicSalary','','',''))
-    this.addEntityProperty(entity1,new EntityProperty('','DA','','',''))
-    this.addEntityProperty(entity1,new EntityProperty('','grossSalary','','','calculateGrossSalary'))
+    this.addEntityProperty(entity1,new EntityProperty('','basicSalary1','','',''))
+    this.addEntityProperty(entity1,new EntityProperty('','DA1','','',''))
+    this.addEntityProperty(entity1,new EntityProperty('','grossSalary1','','','calculateGrossSalary'))
 
     this.addEntityProperty(entity2,new EntityProperty('','basicSalary','','',''))
     this.addEntityProperty(entity2,new EntityProperty('','allowanceFixed','','','setFinalAllowanceFixed'))
@@ -46,8 +48,10 @@ export class EntityService{
     let entitySession:Entity;
     let entityUser:Entity;
     let entityRoles:Entity;
+    let entityConfiguration:Entity;
 
     entitySession = new Entity('','Session','basic');
+    entityConfiguration = new Entity('','Configuration','basic');
     entityUser = new Entity('','User','basic');
     entityRoles = new Entity('','Roles','basic');
     this.addEntityProperty(entityUser,new EntityProperty('','userID','','',''))
@@ -57,12 +61,17 @@ export class EntityService{
     this.addEntityProperty(entityRoles,new EntityProperty('','roleID','','',''))
     this.addEntityProperty(entityRoles,new EntityProperty('','roleName','','',''))
 
-    entitySession.child_Entity.push(entityUser);
+    this.addEntityProperty(entityConfiguration,new EntityProperty('','multiplierAllowanceFixed','','',''))
+    this.addEntityProperty(entityConfiguration,new EntityProperty('','maxAllowanceFixed','','',''))
+
     entityUser.child_Entity.push(entityRoles);
+    entitySession.child_Entity.push(entityUser);
+    entitySession.child_Entity.push(entityConfiguration);
 
     this.addEntity(entitySession);
     this.addEntity(entityUser);
     this.addEntity(entityRoles);
+    this.addEntity(entityConfiguration);
 
   }
 
@@ -70,40 +79,111 @@ export class EntityService{
   generateSessionData(entity:Entity){
     let thisObject:any;
     let returnObject:any;
+    let thisObjectUser:any;
+    let thisObjectSession:any;
+    let thisObjectConfig:any;
+    let thisObjectRoles:any;
 
-    thisObject = this.getEntityObject(entity);
-    this.setEntityPropertyValue(thisObject, entity,'userName','Rahul Joshi',0);
+    thisObjectSession = this.getEntityObject(entity, true);
+    thisObject = thisObjectSession;
+
+    let entityUser:Entity = this.getEntity('User'); //new Entity('','Salary','basic');
+
+    let entityRoles:Entity = this.getEntity('Roles'); //new Entity('','Salary','basic');
+
+    let entityConfig:Entity = this.getEntity('Configuration'); //new Entity('','Salary','basic');
+    thisObjectConfig = this.getEntityObject(entityConfig, true);
+    this.setEntityPropertyValue(thisObjectConfig, entityConfig,'multiplierAllowanceFixed',0.3,0);
+    this.setEntityPropertyValue(thisObjectConfig, entityConfig,'maxAllowanceFixed',2500,0);
+    this.setChildValue(entity, thisObject, 'Configuration', thisObjectConfig);
+
+    thisObjectUser = this.getEntityObject(entityUser, true);
+    this.setEntityPropertyValue(thisObjectUser, entityUser,'userName','Rahul Joshi',0);
     //thisObject['basicSalary'] = 4000;
-    returnObject = this.setEntityPropertyValue(thisObject, entity,'userEmail','rahul.joshi@abc.com',0);
-    //thisObject['allowanceFixed'] = 0;
-    console.log("Returned Object");
-    console.log(returnObject);
-    this.setEntityPropertyValue(returnObject, entity,'roleName','Admin',0);
-    this.setEntityPropertyValue(returnObject, entity,'roleName','FA',1);
+    this.setEntityPropertyValue(thisObjectUser, entityUser,'userEmail','rahul.joshi@abc.com',0);
 
-    this.setEntityPropertyValue(thisObject, entity,'userName','Sahil Joshi',1);
-    returnObject = this.setEntityPropertyValue(thisObject, entity,'userEmail','sahil.joshi@abc.com',1);
-    console.log("Returned Object");
-    console.log(returnObject);
-    this.setEntityPropertyValue(returnObject, entity,'roleName','FA',0);
+    //this.setChildValue(entity, thisObject, 'User', thisObjectUser);
+
+    //thisObject['allowanceFixed'] = 0;
+    //console.log("Returned Object");
+    //console.log(returnObject);
+    thisObjectRoles = this.getEntityObject(entityRoles, true);
+    this.setEntityPropertyValue(thisObjectRoles, entityRoles,'roleName','Admin',0);
+
+    this.setChildValue(entityUser, thisObjectUser, 'Roles', thisObjectRoles);
+
+    thisObjectRoles = this.getEntityObject(entityRoles, true);
+    this.setEntityPropertyValue(thisObjectRoles, entityRoles,'roleName','FA',1);
+
+    this.setChildValue(entityUser, thisObjectUser, 'Roles', thisObjectRoles);
+
+    this.setChildValue(entity, thisObject, 'User', thisObjectUser);
+
+    thisObjectUser = this.getEntityObject(entityUser, true);
+    this.setEntityPropertyValue(thisObjectUser, entityUser,'userName','Sahil Joshi',1);
+    //returnObject =
+
+    //thisObjectUser = this.getEntityObject(entityUser, true);
+    this.setEntityPropertyValue(thisObjectUser, entityUser,'userEmail','sahil.joshi@abc.com',1);
+
+    //console.log("Returned Object");
+    //console.log(returnObject);
+
+    thisObjectRoles = this.getEntityObject(entityRoles, true);
+    this.setEntityPropertyValue(thisObjectRoles, entityRoles,'roleName','FA',0);
+
+    this.setChildValue(entityUser, thisObjectUser, 'Roles', thisObjectRoles);
+
+    this.setChildValue(entity, thisObject, 'User', thisObjectUser);
     //thisObject['DA'] = 200;
     //thisObject['grossSalary'] = 0;
-    return thisObject;
+
+
+    return thisObjectSession;
   }
 
   // How to set data submitted from UI Form and calculate business rules or calculated fields.
-  generateEntityData(entity:Entity){
-    let thisObject:any;
-    thisObject = this.getEntityObject(entity);
-    this.setEntityPropertyValue(thisObject, entity,'basicSalary',4000);
+  generateEntityData(entityEmployee:Entity){
+    let thisObjectEmployee:any;
+    let thisObjectSalary:any;
+
+    //'Employee'
+    thisObjectEmployee = this.getEntityObject(entityEmployee, true);
+
+    let entitySalary:Entity = this.getEntity('Salary'); //new Entity('','Salary','basic');
+    thisObjectSalary = this.getEntityObject(entitySalary, true);
+
+    //entityEmployee.child_Entity.push(entitySalary);
+
+    this.setEntityPropertyValue(thisObjectSalary, entitySalary,'basicSalary',4000);
     //thisObject['basicSalary'] = 4000;
-    this.setEntityPropertyValue(thisObject, entity,'allowanceFixed',0);
+    this.setEntityPropertyValue(thisObjectSalary, entitySalary,'allowanceFixed',0);
     //thisObject['allowanceFixed'] = 0;
-    this.setEntityPropertyValue(thisObject, entity,'DA',200);
+    this.setEntityPropertyValue(thisObjectSalary, entitySalary,'DA',200);
     //thisObject['DA'] = 200;
-    this.setEntityPropertyValue(thisObject, entity,'grossSalary',0);
+    this.setEntityPropertyValue(thisObjectSalary, entitySalary,'grossSalary',0);
     //thisObject['grossSalary'] = 0;
-    return thisObject;
+
+    console.log(thisObjectEmployee);
+    //)['Employee']['Salary'].push(thisObjectSalary)
+    this.setChildValue(entityEmployee, thisObjectEmployee, 'Salary', thisObjectSalary);
+
+    thisObjectSalary = this.getEntityObject(entitySalary, true);
+    //entityEmployee.child_Entity.push(entitySalary);
+
+    this.setEntityPropertyValue(thisObjectSalary, entitySalary,'basicSalary',8000,1);
+    //thisObject['basicSalary'] = 4000;
+    this.setEntityPropertyValue(thisObjectSalary, entitySalary,'allowanceFixed',0,1);
+    //thisObject['allowanceFixed'] = 0;
+    this.setEntityPropertyValue(thisObjectSalary, entitySalary,'DA',500,1);
+    //thisObject['DA'] = 200;
+    this.setEntityPropertyValue(thisObjectSalary, entitySalary,'grossSalary',0,1);
+
+    //thisObjectEmployee['Employee']['Salary'].push(thisObjectSalary);
+    this.setChildValue(entityEmployee, thisObjectEmployee, 'Salary', thisObjectSalary);
+
+    return thisObjectEmployee;
+
   }
 
   // Set business rule data
@@ -128,7 +208,7 @@ export class EntityService{
         paramArray:[
           //new Parameter('calculateGrossSalary', 'businessrule', businessRule01),
           {parameter_Name:'calculateGrossSalary',parameter_Type:'businessrule', businessRule:'calculateGrossSalary',parameter_Value:null,parameter_Direction:'read'},
-          new Parameter('multiplierAllowanceFixed', 'value', null, 0.3,'read'),
+          new Parameter('multiplierAllowanceFixed', 'value', null, null,'read'),
           new Parameter('allowanceFixed', 'attribute', null, null,'write')
         ],
         returnValue:null,
@@ -141,7 +221,7 @@ export class EntityService{
         paramArray:[
           //new Parameter('calculateGrossSalary', 'businessrule', businessRule01),
           {parameter_Name:'calculateAllowanceFixed',parameter_Type:'businessrule', businessRule:'calculateAllowanceFixed',parameter_Value:null,parameter_Direction:'read'},
-          new Parameter('maxAllowanceFixed', 'value', null, 1260,'read')
+          new Parameter('maxAllowanceFixed', 'value', null, null,'read')
         ],
         returnValue:null,
       };
@@ -153,7 +233,7 @@ export class EntityService{
         paramArray:[
           //new Parameter('calculateGrossSalary', 'businessrule', businessRule01),
           {parameter_Name:'compareAllowanceFixed',parameter_Type:'businessrule', businessRule:'compareAllowanceFixed',parameter_Value:null,parameter_Direction:'read'},
-          new Parameter('maxAllowanceFixed', 'value', null, 1260,'read'),
+          new Parameter('maxAllowanceFixed', 'value', null, null,'read'),
           {parameter_Name:'calculateAllowanceFixed',parameter_Type:'businessrule', businessRule:'calculateAllowanceFixed',parameter_Value:null,parameter_Direction:'read'},
           new Parameter('allowanceFixed', 'attribute', null, null,'write')
         ],
@@ -177,67 +257,89 @@ export class EntityService{
     }
   }
 
-  public getEntityObject(entity:Entity){
+  public setChildValue(entity:Entity, thisObject:any, childEntity:string, childObject:any){
+    {
+        for(let entityNodeChild of entity.child_Entity){
+          if (entityNodeChild.entity_Name  == childEntity){
+            thisObject[entity.entity_Name][entityNodeChild.entity_Name].push(childObject);
+          }
+          //let returnObject:any= this.getEntityObject(entityNodeChild, depthFirst);
+        }
+    }
+  }
+
+  public getEntityObject(entity:Entity, depthFirst:boolean){
     let thisObject:any={};
     {
       thisObject[entity.entity_Name]={};
       for (let entityNode of entity.entityPropertyArray) {
         thisObject[entity.entity_Name][entityNode.entity_property_Name]='';
       }
+
       //console.log(thisObject);
-      for(let entityNodeChild of entity.child_Entity){
-        let returnObject:any= this.getEntityObject(entityNodeChild);
-        thisObject[entity.entity_Name][entityNodeChild.entity_Name] =returnObject;
+      if (depthFirst){
+        for(let entityNodeChild of entity.child_Entity){
+          //let returnObject:any= this.getEntityObject(entityNodeChild, depthFirst);
+          thisObject[entity.entity_Name][entityNodeChild.entity_Name] =[];
+        }
       }
+
     }
     return thisObject;
   }
 
-  setEntityPropertyValue(thisObject:any, entity:Entity, propertyName:string, value:any, index:number=0){
+  setEntityPropertyValue(thisObject:any, entity:Entity, propertyName:string, value:any, index:number=0):any{
     let returnObject:any;
-    //console.log(thisObject);
+    console.log("Property : " + propertyName + " Value: " + value);
+    console.log(thisObject);
+    console.log(entity);
     for (let entityNode of entity.entityPropertyArray) {
-      if (entityNode.entity_property_Name ===propertyName){
-        console.log(thisObject[entity.entity_Name][entityNode.entity_property_Name]);
-        returnObject = thisObject[entity.entity_Name][entityNode.entity_property_Name];
+      if (entityNode.entity_property_Name === propertyName){
+        //console.log(thisObject[entity.entity_Name][entityNode.entity_property_Name]);
+        //console.log(thisObject);
         thisObject[entity.entity_Name][entityNode.entity_property_Name]=value;
+        returnObject = {ReturnObject: thisObject[entity.entity_Name], Entity: entity};
+        return returnObject;
       }
     }
+    /*
     for(let entityNodeChild of entity.child_Entity){
       let thisChildEntity:Entity;
       let thisChildObject:any;
 
       console.log("Entity Output ");
-      console.log(thisObject[entity.entity_Name][entityNodeChild.entity_Name].length);
-
-
-
-      if (thisObject[entity.entity_Name][entityNodeChild.entity_Name] == null || thisObject[entity.entity_Name][entityNodeChild.entity_Name].length == undefined){
-        thisObject[entity.entity_Name][entityNodeChild.entity_Name] = [];
-      }
-      console.log(thisObject[entity.entity_Name][entityNodeChild.entity_Name].length);
-      if (thisObject[entity.entity_Name][entityNodeChild.entity_Name].length < index+1){
+      console.log(thisObject[entity.entity_Name]);
+      if (1) {
+        if (thisObject[entity.entity_Name][entityNodeChild.entity_Name] == undefined || thisObject[entity.entity_Name][entityNodeChild.entity_Name].length == undefined) {
+          thisObject[entity.entity_Name][entityNodeChild.entity_Name] = [];
+        }
+        console.log(thisObject[entity.entity_Name][entityNodeChild.entity_Name].length);
+        if (thisObject[entity.entity_Name][entityNodeChild.entity_Name].length < index + 1) {
           console.log("inside");
           thisChildEntity = this.getEntity(entityNodeChild.entity_Name);
-          thisChildObject = this.getEntityObject(thisChildEntity);
+          thisChildObject = this.getEntityObject(thisChildEntity, false);
+          //returnObject =thisChildObject;
+          //console.log(returnObject);
           console.log("Child Object");
-          console.log(thisChildEntity.child_Entity.length);
-          if (thisChildEntity.child_Entity.length > 0)
-          {
-            returnObject =  this.setEntityPropertyValue(thisChildObject, entityNodeChild, propertyName, value, index);
-          }
+          console.log(thisChildEntity);
+          console.log(thisChildObject);
           thisObject[entity.entity_Name][entityNodeChild.entity_Name].push(thisChildObject);
-      }
-      for (let entityNode of entityNodeChild.entityPropertyArray) {
-        //console.log(entityNodeChild.entity_Name);
-        if (entityNode.entity_property_Name ===propertyName) {
-          console.log(thisObject[entity.entity_Name][entityNodeChild.entity_Name][index][entityNodeChild.entity_Name][entityNode.entity_property_Name]);
-          returnObject = thisObject[entity.entity_Name][entityNodeChild.entity_Name][index][entityNodeChild.entity_Name][entityNode.entity_property_Name];
+        }
+        for (let entityNode of entityNodeChild.entityPropertyArray) {
+          //console.log(entityNodeChild.entity_Name);
+          if (entityNode.entity_property_Name === propertyName) {
             thisObject[entity.entity_Name][entityNodeChild.entity_Name][index][entityNodeChild.entity_Name][entityNode.entity_property_Name] = value;
+            returnObject = {ReturnObject: thisObject[entity.entity_Name][entityNodeChild.entity_Name][index], Entity: entityNodeChild};
+            return returnObject;
+            //console.log(thisObject[entity.entity_Name][entityNodeChild.entity_Name][index][entityNodeChild.entity_Name]);
+          }
+        }
+        if (entityNodeChild.child_Entity.length != undefined) {
+          this.setEntityPropertyValue(returnObject, entityNodeChild, propertyName, value, index);
         }
       }
-
     }
+    */
     return returnObject;
   }
 
@@ -249,7 +351,54 @@ export class EntityService{
     }
   }
 
+  public getSessionConfigurationData(propertyName:string){
+    let returnObject:any;
+    let thisObject:any;
+    let entity:Entity;
 
+    thisObject = this.sessionData;
+      entity = this.sessionEntity;
+
+    console.log("Inside GetSession Property : " + propertyName );
+    console.log(thisObject);
+    console.log(entity);
+    for (let entityNode of entity.entityPropertyArray) {
+      if (entityNode.entity_property_Name === propertyName){
+        //console.log(thisObject[entity.entity_Name][entityNode.entity_property_Name]);
+        //console.log(thisObject);
+        returnObject = thisObject[entity.entity_Name][entityNode.entity_property_Name];
+        return returnObject;
+      }
+    }
+    for(let entityNodeChild of entity.child_Entity){
+      let thisChildEntity:Entity;
+      let thisChildObject:any;
+
+      //console.log("Entity Output ");
+      //console.log(thisObject[entity.entity_Name]);
+      for(let entityValuieNode of thisObject[entity.entity_Name][entityNodeChild.entity_Name]) {
+        //console.log(entityValuieNode);
+        if (entityValuieNode) {
+          //console.log("inside");
+          //console.log("Child Object");
+          for (let entityNode of entityNodeChild.entityPropertyArray) {
+            //console.log(entityNodeChild.entity_Name);
+            if (entityNode.entity_property_Name === propertyName) {
+              //thisObject[entity.entity_Name][entityNodeChild.entity_Name][index][entityNodeChild.entity_Name][entityNode.entity_property_Name] = value;
+              //console.log(entityValuieNode[entityNodeChild.entity_Name][entityNode.entity_property_Name]);
+              returnObject = entityValuieNode[entityNodeChild.entity_Name][entityNode.entity_property_Name];
+              return returnObject;
+              //console.log(thisObject[entity.entity_Name][entityNodeChild.entity_Name][index][entityNodeChild.entity_Name]);
+            }
+          }
+          // if (entityNodeChild.child_Entity.length != undefined) {
+          //   this.getSessionConfigurationData(propertyName);
+          // }
+        }
+      }
+    }
+    return returnObject;
+  }
   // public addEntityProperty(entityAdd: Entity, entityPropertyAdd: EntityProperty){
   //   let subjectProperty: Subject<any>;
   //   subjectProperty = new Subject<any>();
@@ -357,7 +506,9 @@ export class EntityService{
           //console.log("Rule Return : " + pararamEach.businessRule.returnValue[0]);
         }
         else if(pararamEach.parameter_Type === 'value') {
-          valueParam[indexParam] = pararamEach.parameter_Value;
+          let paramValue = this.getSessionConfigurationData(pararamEach.parameter_Name);
+          //console.log("Parameter Value" + paramValue);
+          valueParam[indexParam] = paramValue; //pararamEach.parameter_Value;
         }
         else if(pararamEach.parameter_Type === 'attribute' &&  pararamEach.parameter_Direction === 'write') {
           returnParam = pararamEach;
