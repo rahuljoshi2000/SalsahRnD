@@ -3,6 +3,8 @@ import {Injectable} from "@angular/core";
 
 import {Ingrediant} from "../shared/ingrediant.model";
 import {EntityService} from "../shared/services/entity.service";
+import {SessionService} from "../shared/services/session.service";
+import {BusinessService} from "../shared/services/business.service";
 import {BusinessRule, Entity, EntityProperty} from "../shared/entity.model";
 
 @Injectable()
@@ -13,24 +15,25 @@ export class ShoppingListService{
   ];
 
 
-  constructor(private entityService: EntityService){
+  constructor(private entityService: EntityService, private sessionService: SessionService , private businessService: BusinessService){
 
     let thisObject:any;
     let thisSessionObject:any;
     //let businessRule02:BusinessRule = this.entityService.getBusinessRule('calculateAllowanceFixed');
-    this.entityService.setSampleBusinessRule();
+    this.businessService.setSampleBusinessRule();
 
     let entityEmployee:Entity = this.entityService.getEntity('Employee'); //new Entity('','Salary','basic');
-    thisObject = this.entityService.generateEntityData(entityEmployee);
+    thisObject = this.businessService.generateEntityData(entityEmployee);
     console.log(thisObject);
 
-    let entitySession:Entity = this.entityService.getEntity('Session'); //new Entity('','Salary','basic');
-    thisSessionObject = this.entityService.generateSessionData(entitySession);
-    this.entityService.sessionData = thisSessionObject;
-    this.entityService.sessionEntity = entitySession;
+    thisSessionObject = this.sessionService.generateSessionData();
+
+    //this.entityService.sessionData = thisSessionObject;
+    //this.entityService.sessionEntity = entitySession;
+
     console.log(thisSessionObject);
     //{basicSalary:40000,allowanceFixed:0, DA:200,grossSalary:0}
-    this.entityService.extractRule([thisObject], entityEmployee);
+    this.sessionService.extractAndExecuteRule([thisObject], entityEmployee, thisSessionObject);
     console.log(thisObject);
   }
 
