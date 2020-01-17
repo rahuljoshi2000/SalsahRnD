@@ -168,6 +168,82 @@ export class EntityService{
       }
     }
   }
+  public getEntityPropertyValues(thisObject:any, entity:Entity, propertyName: string, returnObject:any[]){
+    //let returnObject:any[];
+    //console.log(thisObject);
+    //console.log(entity);
+    if (returnObject == undefined)
+      returnObject = [];
+    for (let entityNode of entity.entityPropertyArray) {
+      if (entityNode.entity_property_Name === propertyName){
+        //console.log("Found Object");
+        //console.log(thisObject[entity.entity_Name][entityNode.entity_property_Name]);
+        returnObject.push(thisObject[entity.entity_Name][entityNode.entity_property_Name]);
+        //return returnObject;
+      }
+    }
+    for(let entityNodeChild of entity.child_Entity){
+      let thisChildEntity:Entity;
+      let thisChildObject:any;
+
+      for(let entityValuieNode of thisObject[entity.entity_Name][entityNodeChild.entity_Name]) {
+        if (entityValuieNode) {
+          for (let entityNode of entityNodeChild.entityPropertyArray) {
+            if (entityNode.entity_property_Name === propertyName) {
+              //console.log("Found Object");
+              //console.log(entityValuieNode[entityNodeChild.entity_Name][entityNode.entity_property_Name]);
+              returnObject.push(entityValuieNode[entityNodeChild.entity_Name][entityNode.entity_property_Name]);
+            }
+          }
+        }
+        //console.log(entityValuieNode);
+        for(let entityNodeChildNext of entityNodeChild.child_Entity){
+          for(let entityValueNodeChildNext of entityValuieNode[entityNodeChild.entity_Name][entityNodeChildNext.entity_Name]){
+            this.getEntityPropertyValues(entityValueNodeChildNext, entityNodeChildNext,propertyName, returnObject);
+          }
+        }
+      }
+    }
+    return returnObject;
+  }
+  public getEntityByPropertyValue(thisObject:any, entity:Entity, propertyName: string, valueFind:any){
+    //let returnObject:any[];
+    for (let entityNode of entity.entityPropertyArray) {
+      if (entityNode.entity_property_Name === propertyName){
+        if (thisObject[entity.entity_Name][entityNode.entity_property_Name] == valueFind)
+          return thisObject[entity.entity_Name];
+        //return returnObject;
+      }
+    }
+    for(let entityNodeChild of entity.child_Entity){
+      let thisChildEntity:Entity;
+      let thisChildObject:any;
+
+      for(let entityValuieNode of thisObject[entity.entity_Name][entityNodeChild.entity_Name]) {
+        //console.log("User To Find : ");
+        //console.log(propertyName);
+        //console.log(valueFind);
+        if (entityValuieNode) {
+          for (let entityNode of entityNodeChild.entityPropertyArray) {
+            //console.log(entityValuieNode[entityNodeChild.entity_Name][entityNode.entity_property_Name]);
+            if (entityNode.entity_property_Name === propertyName) {
+              if (entityValuieNode[entityNodeChild.entity_Name][entityNode.entity_property_Name] == valueFind)
+                //console.log(entityValuieNode[entityNodeChild.entity_Name]);
+                return entityValuieNode;
+            }
+          }
+        }
+        for(let entityNodeChildNext of entityNodeChild.child_Entity){
+          for(let entityValueNodeChildNext of entityValuieNode[entityNodeChild.entity_Name][entityNodeChildNext.entity_Name]){
+            //console.log(entityValueNodeChildNext);
+            //console.log(entityNodeChildNext);
+            this.getEntityByPropertyValue(entityValueNodeChildNext, entityNodeChildNext,propertyName, valueFind);
+          }
+        }
+      }
+    }
+    //return returnObject;
+  }
 
   // Can add entity as parametr or business rule as parameter only
   public addParameter(paramAdd: Parameter, policyRule: BusinessRule){
@@ -179,17 +255,23 @@ export class EntityService{
     this.entityArray.push(entityAdd);
   }
 
- public getEntityBusinessRule(thisObject:any, entity:Entity):entityBusinessRule[]{
+
+ public getEntityBusinessRuleFromEntity(thisObject:any, entity:Entity):entityBusinessRule[]{
    let someObject:entityBusinessRule;
    let someObjectArray: entityBusinessRule[] = [];
+   /*if (entity.entity_access_rule != '' && entity.entity_access_rule != undefined){
+
+   }
+   */
    for (let entityProperty of entity.entityPropertyArray) {
      if (entityProperty.entity_property_business_rule && entityProperty.entity_property_business_rule != '') {
        someObjectArray.push({entityThis:thisObject[entity.entity_Name],businessRuleName:entityProperty.entity_property_business_rule});
-       //this.callMe(thisObject[entity.entity_Name], this.businessService.getBusinessRule(entityProperty.entity_property_business_rule));
      }
      if (entityProperty.entity_property_validation_rule && entityProperty.entity_property_validation_rule != '') {
        someObjectArray.push({entityThis:thisObject[entity.entity_Name],businessRuleName:entityProperty.entity_property_business_rule});
-       //this.callMe(thisObject[entity.entity_Name], this.businessService.getBusinessRule(entityProperty.entity_property_validation_rule));
+     }
+     if (entityProperty.entity_access_rule && entityProperty.entity_access_rule != '') {
+       someObjectArray.push({entityThis:thisObject[entity.entity_Name],businessRuleName:entityProperty.entity_access_rule});
      }
    }
    for (let entityChild of entity.child_Entity) {
@@ -197,13 +279,16 @@ export class EntityService{
        if (entityProperty.entity_property_business_rule && entityProperty.entity_property_business_rule != '') {
          for(let childNode of thisObject[entity.entity_Name][entityChild.entity_Name]){
            someObjectArray.push({entityThis:childNode[entityChild.entity_Name],businessRuleName:entityProperty.entity_property_business_rule});
-           //this.callMe(childNode[entityChild.entity_Name], this.businessService.getBusinessRule(entityProperty.entity_property_business_rule));
          }
        }
        if (entityProperty.entity_property_validation_rule && entityProperty.entity_property_validation_rule != '') {
          for(let childNode of thisObject[entity.entity_Name][entityChild.entity_Name]){
            someObjectArray.push({entityThis:childNode[entityChild.entity_Name],businessRuleName:entityProperty.entity_property_business_rule});
-           //this.callMe(childNode[entityChild.entity_Name], this.businessService.getBusinessRule(entityProperty.entity_property_validation_rule));
+         }
+       }
+       if (entityProperty.entity_access_rule && entityProperty.entity_access_rule != '') {
+         for(let childNode of thisObject[entity.entity_Name][entityChild.entity_Name]){
+           someObjectArray.push({entityThis:childNode[entityChild.entity_Name],businessRuleName:entityProperty.entity_access_rule});
          }
        }
      }

@@ -10,6 +10,7 @@ const maxEntity:number=1000;
 export class SessionService{
   private sessionData:any;
   private sessionEntity:Entity;
+  private currentLoggedInUser:string = 'SahilJoshi';
   constructor(private entityService:EntityService, private businessService:BusinessService){
     this.sessionEntity = this.entityService.getEntity('Session'); //new Entity('','Salary','basic');
     this.sessionData =  this.generateSessionData();
@@ -32,10 +33,12 @@ export class SessionService{
     thisObjectConfig = this.entityService.getEntityObject(entityConfig, true);
     this.entityService.setEntityPropertyValue(thisObjectConfig, entityConfig,'multiplierAllowanceFixed',0.3,0);
     this.entityService.setEntityPropertyValue(thisObjectConfig, entityConfig,'maxAllowanceFixed',2500,0);
+    this.entityService.setEntityPropertyValue(thisObjectConfig, entityConfig,'superUserRole',['SU','SA'],0);
+
     this.entityService.setChildValue(entity, thisObject, 'SystemConfiguration', thisObjectConfig);
 
     thisObjectUser = this.entityService.getEntityObject(entityUser, true);
-    this.entityService.setEntityPropertyValue(thisObjectUser, entityUser,'userName','Rahul Joshi',0);
+    this.entityService.setEntityPropertyValue(thisObjectUser, entityUser,'userName','RahulJoshi',0);
     this.entityService.setEntityPropertyValue(thisObjectUser, entityUser,'userEmail','rahul.joshi@abc.com',0);
 
     thisObjectRoles = this.entityService.getEntityObject(entityRoles, true);
@@ -51,13 +54,12 @@ export class SessionService{
     this.entityService.setChildValue(entity, thisObject, 'User', thisObjectUser);
 
     thisObjectUser = this.entityService.getEntityObject(entityUser, true);
-    this.entityService.setEntityPropertyValue(thisObjectUser, entityUser,'userName','Sahil Joshi',1);
+    this.entityService.setEntityPropertyValue(thisObjectUser, entityUser,'userName','SahilJoshi',1);
 
     this.entityService.setEntityPropertyValue(thisObjectUser, entityUser,'userEmail','sahil.joshi@abc.com',1);
 
-
     thisObjectRoles = this.entityService.getEntityObject(entityRoles, true);
-    this.entityService.setEntityPropertyValue(thisObjectRoles, entityRoles,'roleName','FA',0);
+    this.entityService.setEntityPropertyValue(thisObjectRoles, entityRoles,'roleName','SA',0);
 
     this.entityService.setChildValue(entityUser, thisObjectUser, 'Roles', thisObjectRoles);
 
@@ -77,12 +79,35 @@ export class SessionService{
     returnObject = this.entityService.getEntityPropertyValue(thisObject, entity, propertyName);
     return returnObject;
   }
+  public getSessionUserData(thisObject:any, propertyName:string){
+    let returnObject:any[];
+    let thisUserObject:any;
+    let entity:Entity;
+    let thisUserEntity:Entity;
+
+    thisObject = this.sessionData;
+    entity = this.sessionEntity;
+    thisUserEntity = this.entityService.getEntity("User");
+    thisUserObject = this.getLoggedInUserData(thisObject);
+    returnObject = this.entityService.getEntityPropertyValues(thisUserObject, thisUserEntity, propertyName, undefined);
+    return returnObject;
+  }
+  public getLoggedInUserData(thisObject:any){
+    let returnObject:any[];
+    //let thisObject:any;
+    let entity:Entity;
+
+    thisObject = this.sessionData;
+    entity = this.sessionEntity;
+    returnObject = this.entityService.getEntityByPropertyValue(thisObject, entity, 'userName', this.currentLoggedInUser);
+    return returnObject;
+  }
 
   public extractAndExecuteRule(thisObjectArray:any[], entity: Entity, sessionObject:any){
     this.sessionData = sessionObject;
 
     for(let thisObject of thisObjectArray.slice()) {
-      for (let entityBusinessRuleNode of this.entityService.getEntityBusinessRule(thisObject, entity)){
+      for (let entityBusinessRuleNode of this.entityService.getEntityBusinessRuleFromEntity(thisObject, entity)){
         this.execRule(entityBusinessRuleNode.entityThis, this.businessService.getBusinessRule(entityBusinessRuleNode.businessRuleName));
       }
     }
@@ -104,12 +129,26 @@ export class SessionService{
       else if(pararamEach.parameter_Type === 'value') {
         let paramValue = this.getSessionConfigurationData(pararamEach.parameter_Name);
         valueParam[indexParam] = paramValue;
+        //console.log(pararamEach.parameter_Name);
+        //console.log(paramValue);
       }
       else if(pararamEach.parameter_Type === 'attribute' &&  pararamEach.parameter_Direction === 'write') {
         returnParam = pararamEach;
       }
       else{
-        valueParam[indexParam] = thisObject[pararamEach.parameter_Name];
+        //console.log(pararamEach.parameter_Name);
+        //console.log(thisObject[pararamEach.parameter_Name]);
+        if (thisObject[pararamEach.parameter_Name] != undefined){
+          valueParam[indexParam] = thisObject[pararamEach.parameter_Name];
+        }else{
+          //console.log("Checking in session");
+          let paramValue:any[] = this.getSessionUserData(null ,pararamEach.parameter_Name);
+          if (paramValue != undefined && paramValue.length > 0){
+            valueParam[indexParam] = paramValue;
+          }
+          //console.log(pararamEach.parameter_Name);
+          //console.log(paramValue);
+        }
       }
       indexParam++;
     }

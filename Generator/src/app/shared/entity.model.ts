@@ -7,6 +7,7 @@ export class Entity {
     //public entity_Dispaly_Type:string, // Text, TextArea, DatePicker, Dropdown, Search --> should have one associated control for it?
     //public entity_Data_Type:string, // numeric, string, datetime,
     public entity_Group:string='', // entity
+    //public entity_access_rule: string='', // used for input validation
     public child_Entity:Entity[]=[],
     public entityPropertyArray: EntityProperty[]=[],
   ){}
@@ -19,6 +20,7 @@ export class EntityProperty {
     public entity_property_Group:string='', // entity
     public entity_property_validation_rule: string='', // used for input validation
     public entity_property_business_rule: string='', // used for calculation, even for dropdowns it will bring out values based on filtering criteria
+    public entity_access_rule: string='', // used for input validation
     public entity_property_Display_Type:string='', // Text, TextArea, DatePicker, Radio, Checkbox, Dropdown, Search --> should have one associated control for it?
     public entity_property_Data_Type:string='', // numeric, string, datetime, BISON, JSON
     public entity_property_Html:string='', // HTML template url

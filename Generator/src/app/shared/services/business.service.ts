@@ -2,6 +2,8 @@ import {Injectable} from "@angular/core";
 import {Subject} from "rxjs";
 import {BusinessPolicy, BusinessRule, Parameter, Entity, EntityProperty} from "../entity.model";
 import {EntityService} from "./entity.service";
+import {HttpClient} from "@angular/common/http";
+import { map } from 'rxjs/operators';
 
 const maxEntity:number=1000;
 
@@ -11,7 +13,7 @@ export class BusinessService{
   private businessEntitities : Entity;
   private rootEntity:Entity;
 
-  constructor(private entityService: EntityService){
+  constructor(private entityService: EntityService, private http: HttpClient){
     this.businessPolicy = new BusinessPolicy();
     this.generateEntity();
   }
@@ -30,10 +32,12 @@ export class BusinessService{
     this.businessEntitities.child_Entity.push(entity1);
     //this.businessEntitities.child_Entity.push(entity2);
 
+    this.entityService.addEntityProperty(entity1,new EntityProperty('','accessEntity','','','','isUserInSuperUserRole'))
     this.entityService.addEntityProperty(entity1,new EntityProperty('','basicSalary','','',''))
     this.entityService.addEntityProperty(entity1,new EntityProperty('','DA','','',''))
     this.entityService.addEntityProperty(entity1,new EntityProperty('','grossSalary','','','calculateGrossSalary'))
 
+    this.entityService.addEntityProperty(entity2,new EntityProperty('','accessEntity','','','','isUserInSuperUserRole'))
     this.entityService.addEntityProperty(entity2,new EntityProperty('','basicSalary','','',''))
     this.entityService.addEntityProperty(entity2,new EntityProperty('','allowanceFixed','','','setFinalAllowanceFixed'))
     this.entityService.addEntityProperty(entity2,new EntityProperty('','DA','','',''))
@@ -65,6 +69,7 @@ export class BusinessService{
 
     this.entityService.addEntityProperty(entityConfiguration,new EntityProperty('','multiplierAllowanceFixed','','',''))
     this.entityService.addEntityProperty(entityConfiguration,new EntityProperty('','maxAllowanceFixed','','',''))
+    this.entityService.addEntityProperty(entityConfiguration,new EntityProperty('','superUserRole','','',''))
 
     entityUser.child_Entity.push(entityRoles);
     entitySession.child_Entity.push(entityUser);
@@ -165,25 +170,22 @@ export class BusinessService{
         returnValue:null,
       };
 
-
     let businessRule05:BusinessRule =
       {
-        businessRule_Name:'userInRole',
-        businessRule_function_Name: 'if',
+        businessRule_Name:'isUserInSuperUserRole',
+        businessRule_function_Name: 'in',
         paramArray:[
-          //new Parameter('calculateGrossSalary', 'businessrule', businessRule01),
-          {parameter_Name:'compareAllowanceFixed',parameter_Type:'businessrule', businessRule:'compareAllowanceFixed',parameter_Value:null,parameter_Direction:'read'},
-          new Parameter('maxAllowanceFixed', 'value', null, null,'read'),
-          {parameter_Name:'calculateAllowanceFixed',parameter_Type:'businessrule', businessRule:'calculateAllowanceFixed',parameter_Value:null,parameter_Direction:'read'},
-          new Parameter('allowanceFixed', 'attribute', null, null,'write')
+          new Parameter('roleName', 'attribute', null, null,'read'),
+          new Parameter('superUserRole', 'value', null, null,'read'),
+          new Parameter('accessEntity', 'attribute', null, null,'write')
         ],
         returnValue:null,
       };
-
     this.businessPolicy.addBusinessRule(businessRule01);
     this.businessPolicy.addBusinessRule(businessRule02);
     this.businessPolicy.addBusinessRule(businessRule03);
     this.businessPolicy.addBusinessRule(businessRule04);
+    this.businessPolicy.addBusinessRule(businessRule05);
     //this.execRule([{basicSalary:40000,allowanceFixed:0, DA:200,grossSalary:0}], businessRule02);
   }
 
@@ -198,19 +200,49 @@ export class BusinessService{
   public callRuleFunction(policyRule: BusinessRule, valueParam: any[]){
     let numbReturn:any[]=[];
     switch(policyRule.businessRule_function_Name){
+      case 'apiget':
+        numbReturn.push(
+          this.http
+            .get(
+              valueParam[0]
+              ,
+              valueParam[1]
+            )
+        );
+        break;
+      case 'apipost':
+        numbReturn.push(
+          this.http
+          .post(
+            valueParam[0]
+            ,
+            valueParam[1]
+          )
+        );
+        break;
       case 'in':
+        //console.log("Calling In");
+        //console.log(valueParam);
         let valueExists:boolean = false;
         let inArray:any[]=[];
+        let outArray:any[]=[];
         inArray = valueParam[1];
+        outArray = valueParam[0];
         for(let value of inArray){
-          if (valueParam[0] == value){
-            valueExists = true;
-            break;
+          for(let value1 of outArray){
+            if (value == value1){
+              valueExists = true;
+              break;
+            }
           }
         }
+        //console.log("Calling In " + valueExists);
         numbReturn.push(valueExists);
         break;
       case 'if':
+        //console.log("Value of if condition : " + valueParam[0]);
+        //console.log("Value of after if condition true : " + valueParam[1]);
+        //console.log("Value of after if condition false : " + valueParam[2]);
         numbReturn.push(valueParam[0]  ? valueParam[1]:valueParam[2]);
         break;
       case 'equalto':
