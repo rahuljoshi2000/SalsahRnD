@@ -19,6 +19,7 @@ export class SessionService{
     let thisObject:any;
     let thisObjectUser:any;
     let thisObjectConfig:any;
+    let thisObjectSC:any;
     let thisObjectRoles:any;
     let entity:Entity = this.sessionEntity;
 
@@ -36,6 +37,13 @@ export class SessionService{
     this.entityService.setEntityPropertyValue(thisObjectConfig, entityConfig,'superUserRole',['SU','SA'],0);
 
     this.entityService.setChildValue(entity, thisObject, 'SystemConfiguration', thisObjectConfig);
+
+    let sessionContext:Entity = this.entityService.getEntity('SessionContext'); //new Entity('','Salary','basic');
+    thisObjectSC = this.entityService.getEntityObject(sessionContext, true);
+    this.entityService.setEntityPropertyValue(thisObjectSC, sessionContext,'currentLoggedInUser','SahilJoshi',0);
+
+
+    this.entityService.setChildValue(entity, thisObject, 'SessionContext', thisObjectSC);
 
     thisObjectUser = this.entityService.getEntityObject(entityUser, true);
     this.entityService.setEntityPropertyValue(thisObjectUser, entityUser,'userName','RahulJoshi',0);
@@ -87,8 +95,8 @@ export class SessionService{
 
     thisObject = this.sessionData;
     entity = this.sessionEntity;
-    thisUserEntity = this.entityService.getEntity("User");
-    thisUserObject = this.getLoggedInUserData(thisObject);
+    thisUserEntity = entity; //this.entityService.getEntity("User");
+    thisUserObject = thisObject; //this.getLoggedInUserData(thisObject);
     returnObject = this.entityService.getEntityPropertyValues(thisUserObject, thisUserEntity, propertyName, undefined);
     return returnObject;
   }
@@ -126,9 +134,15 @@ export class SessionService{
         this.execRule(thisObject, businessRule);
         valueParam[indexParam] = businessRule.returnValue[0];
       }
-      else if(pararamEach.parameter_Type === 'value') {
+      else if(pararamEach.parameter_Type === 'configuration') {
         let paramValue = this.getSessionConfigurationData(pararamEach.parameter_Name);
         valueParam[indexParam] = paramValue;
+        //console.log(pararamEach.parameter_Name);
+        //console.log(paramValue);
+      }
+      else if(pararamEach.parameter_Type === 'value') {
+        //let paramValue = this.getSessionConfigurationData(pararamEach.parameter_Name);
+        valueParam[indexParam] = pararamEach.parameter_Value;
         //console.log(pararamEach.parameter_Name);
         //console.log(paramValue);
       }
@@ -140,7 +154,8 @@ export class SessionService{
         //console.log(thisObject[pararamEach.parameter_Name]);
         if (thisObject[pararamEach.parameter_Name] != undefined){
           valueParam[indexParam] = thisObject[pararamEach.parameter_Name];
-        }else{
+        }
+        else{
           //console.log("Checking in session");
           let paramValue:any[] = this.getSessionUserData(null ,pararamEach.parameter_Name);
           if (paramValue != undefined && paramValue.length > 0){

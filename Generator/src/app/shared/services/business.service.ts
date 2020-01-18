@@ -55,9 +55,12 @@ export class BusinessService{
     let entityUser:Entity;
     let entityRoles:Entity;
     let entityConfiguration:Entity;
+    let sessionContext:Entity;
 
     entitySession = new Entity('','Session','basic');
+    sessionContext = new Entity('','SessionContext','basic');
     entityConfiguration = new Entity('','SystemConfiguration','basic');
+
     entityUser = new Entity('','User','basic');
     entityRoles = new Entity('','Roles','basic');
     this.entityService.addEntityProperty(entityUser,new EntityProperty('','userID','','',''))
@@ -67,6 +70,8 @@ export class BusinessService{
     this.entityService.addEntityProperty(entityRoles,new EntityProperty('','roleID','','',''))
     this.entityService.addEntityProperty(entityRoles,new EntityProperty('','roleName','','',''))
 
+    this.entityService.addEntityProperty(sessionContext,new EntityProperty('','currentLoggedInUser','','',''))
+
     this.entityService.addEntityProperty(entityConfiguration,new EntityProperty('','multiplierAllowanceFixed','','',''))
     this.entityService.addEntityProperty(entityConfiguration,new EntityProperty('','maxAllowanceFixed','','',''))
     this.entityService.addEntityProperty(entityConfiguration,new EntityProperty('','superUserRole','','',''))
@@ -74,11 +79,13 @@ export class BusinessService{
     entityUser.child_Entity.push(entityRoles);
     entitySession.child_Entity.push(entityUser);
     entitySession.child_Entity.push(entityConfiguration);
+    entitySession.child_Entity.push(sessionContext);
 
     this.entityService.addEntity(entitySession);
     this.entityService.addEntity(entityUser);
     this.entityService.addEntity(entityRoles);
     this.entityService.addEntity(entityConfiguration);
+    this.entityService.addEntity(sessionContext);
 
   }
 
@@ -138,7 +145,7 @@ export class BusinessService{
         businessRule_function_Name: 'multiply',
         paramArray:[
           {parameter_Name:'calculateGrossSalary',parameter_Type:'businessrule', businessRule:'calculateGrossSalary',parameter_Value:null,parameter_Direction:'read'},
-          new Parameter('multiplierAllowanceFixed', 'value', null, null,'read'),
+          new Parameter('multiplierAllowanceFixed', 'configuration', null, null,'read'),
           new Parameter('allowanceFixed', 'attribute', null, null,'write')
         ],
         returnValue:null,
@@ -151,7 +158,7 @@ export class BusinessService{
         paramArray:[
           //new Parameter('calculateGrossSalary', 'businessrule', businessRule01),
           {parameter_Name:'calculateAllowanceFixed',parameter_Type:'businessrule', businessRule:'calculateAllowanceFixed',parameter_Value:null,parameter_Direction:'read'},
-          new Parameter('maxAllowanceFixed', 'value', null, null,'read')
+          new Parameter('maxAllowanceFixed', 'configuration', null, null,'read')
         ],
         returnValue:null,
       };
@@ -163,7 +170,7 @@ export class BusinessService{
         paramArray:[
           //new Parameter('calculateGrossSalary', 'businessrule', businessRule01),
           {parameter_Name:'compareAllowanceFixed',parameter_Type:'businessrule', businessRule:'compareAllowanceFixed',parameter_Value:null,parameter_Direction:'read'},
-          new Parameter('maxAllowanceFixed', 'value', null, null,'read'),
+          new Parameter('maxAllowanceFixed', 'configuration', null, null,'read'),
           {parameter_Name:'calculateAllowanceFixed',parameter_Type:'businessrule', businessRule:'calculateAllowanceFixed',parameter_Value:null,parameter_Direction:'read'},
           new Parameter('allowanceFixed', 'attribute', null, null,'write')
         ],
@@ -175,17 +182,43 @@ export class BusinessService{
         businessRule_Name:'isUserInSuperUserRole',
         businessRule_function_Name: 'in',
         paramArray:[
-          new Parameter('roleName', 'attribute', null, null,'read'),
-          new Parameter('superUserRole', 'value', null, null,'read'),
+          {parameter_Name:'loggedInUser',parameter_Type:'businessrule', businessRule:'loggedInUser',parameter_Value:null,parameter_Direction:'read'},
+          new Parameter('superUserRole', 'configuration', null, null,'read'),
           new Parameter('accessEntity', 'attribute', null, null,'write')
         ],
         returnValue:null,
       };
+
+    let businessRule06:BusinessRule =
+      {
+        businessRule_Name:'loggedInUser',
+        businessRule_function_Name: 'if',
+        paramArray:[
+          {parameter_Name:'compareUserName',parameter_Type:'businessrule', businessRule:'compareUserName',parameter_Value:null,parameter_Direction:'read'},
+          new Parameter('roleName', 'attribute', null, null,'read'),
+          new Parameter('roleName', 'value', null, '','read'),
+        ],
+        returnValue:null,
+      };
+
+    let businessRule07:BusinessRule =
+      {
+        businessRule_Name:'compareUserName',
+        businessRule_function_Name: 'equalto',
+        paramArray:[
+          new Parameter('userName', 'attribute', null, null,'read'),
+          new Parameter('currentLoggedInUser', 'configuration', null, null,'read')
+        ],
+        returnValue:null,
+      };
+
     this.businessPolicy.addBusinessRule(businessRule01);
     this.businessPolicy.addBusinessRule(businessRule02);
     this.businessPolicy.addBusinessRule(businessRule03);
     this.businessPolicy.addBusinessRule(businessRule04);
     this.businessPolicy.addBusinessRule(businessRule05);
+    this.businessPolicy.addBusinessRule(businessRule06);
+    this.businessPolicy.addBusinessRule(businessRule07);
     //this.execRule([{basicSalary:40000,allowanceFixed:0, DA:200,grossSalary:0}], businessRule02);
   }
 
@@ -199,6 +232,8 @@ export class BusinessService{
 
   public callRuleFunction(policyRule: BusinessRule, valueParam: any[]){
     let numbReturn:any[]=[];
+    console.log(policyRule.businessRule_Name);
+    console.log(valueParam);
     switch(policyRule.businessRule_function_Name){
       case 'apiget':
         numbReturn.push(
@@ -221,13 +256,21 @@ export class BusinessService{
         );
         break;
       case 'in':
-        //console.log("Calling In");
-        //console.log(valueParam);
+        console.log("Calling In");
+        console.log(valueParam);
         let valueExists:boolean = false;
         let inArray:any[]=[];
         let outArray:any[]=[];
         inArray = valueParam[1];
-        outArray = valueParam[0];
+        if (valueParam[0] != undefined && valueParam[0].length != undefined){
+          if (valueParam[0].length > 0){
+            outArray = valueParam[0];
+          }
+        }
+        else if (valueParam[0] != undefined){
+          outArray.push(valueParam[0]);
+        }
+
         for(let value of inArray){
           for(let value1 of outArray){
             if (value == value1){
